@@ -44,7 +44,7 @@
 
 * open creat close函数
 
-  * open
+  * open(文件描述符，打开方式, [mode])
   
     open一个文件成功后会返回这个文件的文件描述符，出错返回-1
   
@@ -54,9 +54,13 @@
   
     creat返回只写打开的文件描述符，出错返回-1
   
-    int creat(const char* path, mode_t mode) 与 open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)等价
+    int creat(const char* path, mode_t mode) 与 open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)等价  
   
-    O_TRUNC：若文件存在并且以可写方式打开时，这个编制会将文件长度清零，丢失原文数据，但文件属性不变
+    **O_WRONLY---> 只写方式打开**
+  
+    **O_TRUNC**：若文件存在并且以可写方式打开时，这个编制会将文件长度清零，丢失原文数据，但文件属性不变
+  
+    mode: 仅在第二个参数有O_CREAT时的新文件的权限
   
   * close
   
@@ -75,3 +79,4 @@
     ​				SEEK_END（距末尾）
 
   * 成功返回新文件偏移量（距头），出错返回-1
+

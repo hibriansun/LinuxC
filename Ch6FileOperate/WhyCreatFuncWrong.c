@@ -72,7 +72,8 @@ int main()
 
 	// 写文件
 	if(write(fd, write_buf, strlen(write_buf)) != strlen(write_buf)){
-		my_error("write", __LINE__);
+		my_error("write", __LINE__);		// @"Create file success\r\n"   @"line:75 write: Bad file descriptor\r\n"
+
 	}
 	
 	//my_read(fd);
