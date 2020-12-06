@@ -70,6 +70,8 @@ int main()
 		printf("Create file success\n");
 	}
 
+	printf("fd = %d\n", fd);			// fd 打印出为0，下列debuger给出Bad file descriptor
+
 	// 写文件
 	if(write(fd, write_buf, strlen(write_buf)) != strlen(write_buf)){
 		my_error("write", __LINE__);		// @"Create file success\r\n"   @"line:75 write: Bad file descriptor\r\n"
@@ -90,5 +92,5 @@ int main()
     //     }
 	// my_read(fd);
 
-	close(fd);
+	// close(fd);
 }
