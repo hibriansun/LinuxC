@@ -21,39 +21,39 @@ void my_error(const char* err_string, int lineNum){
 
 
 // 自定义数据读取函数
-// int my_read(int fd){
-// 	int len;
-// 	int rtn;
-// 	char buf[64];
+int my_read(int fd){
+	int len;
+	int rtn;
+	char buf[64];
 	
-// 	// 获取读取文件长度并保证文件指针指向文件开头
-// 	if(lseek(fd, 0, SEEK_END) == -1){
-// 		my_error("lseek", __LINE__);
-// 	}
+	// 获取读取文件长度并保证文件指针指向文件开头
+	if(lseek(fd, 0, SEEK_END) == -1){
+		my_error("lseek", __LINE__);
+	}
 
-// 	if((len = lseek(fd, 0, SEEK_CUR)) == -1){
-// 		my_error("lseek", __LINE__);
-// 	}
+	if((len = lseek(fd, 0, SEEK_CUR)) == -1){
+		my_error("lseek", __LINE__);
+	}
 
-// 	if(lseek(fd,0, SEEK_SET) == -1){
-// 		my_error("lseek", __LINE__);
-// 	}
+	if(lseek(fd,0, SEEK_SET) == -1){
+		my_error("lseek", __LINE__);
+	}
 
-// 	printf("len = %d\n", len);
+	printf("len = %d\n", len);
 
-// 	// 读数据
-// 	if((rtn = read(fd, buf, len)) < 0){
-// 		my_error("read", __LINE__);
-// 	}
+	// 读数据
+	if((rtn = read(fd, buf, len)) < 0){
+		my_error("read", __LINE__);
+	}
 
-// 	// 打印数据
-// 	for(int i = 0; i < len; i++){
-// 		printf("%c", buf[i]);
-// 	}
-// 	printf("\n");
+	// 打印数据
+	for(int i = 0; i < len; i++){
+		printf("%c", buf[i]);
+	}
+	printf("\n");
 
-// 	return rtn;
-// }
+	return rtn;
+}
 
 
 
@@ -75,19 +75,19 @@ int main()
 		my_error("write", __LINE__);
 	}
 	
-	//my_read(fd);
+	my_read(fd);
 
 
 	// 制作空洞
-	// printf("/*************************/\n");
-	// if(lseek(fd, 10, SEEK_END) == -1){
-	// 	my_error("lseek", __LINE__);
-	// }
+	printf("/*************************/\n");
+	if(lseek(fd, 10, SEEK_END) == -1){
+		my_error("lseek", __LINE__);
+	}
 
-	// if(write(fd, write_buf, strlen(write_buf)) != strlen(write_buf)){
-    //             my_error("write", __LINE__);
-    //     }
-	// my_read(fd);
+	if(write(fd, write_buf, strlen(write_buf)) != strlen(write_buf)){
+                my_error("write", __LINE__);
+        }
+	my_read(fd);
 
 	close(fd);
 }
