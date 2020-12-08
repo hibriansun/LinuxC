@@ -12,14 +12,18 @@
 
 ### 硬链接：
 实验：
+
 [![rpnUiV.md.png](https://s3.ax1x.com/2020/12/08/rpnUiV.md.png)](https://imgchr.com/i/rpnUiV)
 这里创建了个硬链接2.c到1.c上，看到两个文件的**inode index一样**，内容一样，指向同一区块
 
 当我们通过硬链接2.c写入内容，在查看1.c 2.c发现内容一致
+
 [![rpKwDJ.png](https://s3.ax1x.com/2020/12/08/rpKwDJ.png)](https://imgchr.com/i/rpKwDJ)
 
 当我们删除1.c试试
+
 [![rpn2i6.md.png](https://s3.ax1x.com/2020/12/08/rpn2i6.md.png)](https://imgchr.com/i/rpn2i6)
+
 发现2.c这个硬链接还在，并且内容与1.c一致
 
 ==>
@@ -29,7 +33,9 @@
 
 ### 软链接：
 实验：
+
 [![rpMDsg.md.png](https://s3.ax1x.com/2020/12/08/rpMDsg.md.png)](https://imgchr.com/i/rpMDsg)
+
 发现软链接特别像Windows下的快捷方式
 自己是磁盘上单另的一个文件，有自己的inode，这个文件指向另一个**文件目录路径**，另一个文件一旦消失，则无法通过这个软链接访问
 
