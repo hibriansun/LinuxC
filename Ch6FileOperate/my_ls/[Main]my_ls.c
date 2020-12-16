@@ -83,7 +83,7 @@ struct node{
     struct node* next;
 };
 
-// 建栈，看是否有-R，有则将入栈，再递归调用，无则略过此部分
+// 建队列，看是否有-R，有则将入队列，再递归调用，无则略过此部分
 typedef struct unit{
     int front;
     int tail;
