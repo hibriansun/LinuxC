@@ -72,9 +72,9 @@
 #define PARAM_NONE 0    // 00...00000000                                // 完成
 #define PARAM_L 1       // 00...00000001                                // 完成
 #define PARAM_A 2       // 00...00000010                                // 完成
-#define PARAM_UPR 4     // 00...00000100        // Upper R              
+#define PARAM_UPR 4     // 00...00000100        // Upper R              // 完成
 #define PARAM_T 8       // 00...00001000                                // 完成
-#define PARAM_R 16      // 00...00010000        // low r -- reverse     
+#define PARAM_R 16      // 00...00010000        // low r -- reverse     // 完成
 
 // 存目录下文件信息的链表
 struct node{
