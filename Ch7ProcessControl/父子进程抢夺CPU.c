@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 int main()
 {
@@ -30,6 +31,8 @@ int main()
         msg = "Parent process is running.";
         break;
     }
+
+    // wait(NULL);      // 没有wait则会出现父子进程抢夺cpu
 
     while(cnt){
         puts(msg);
