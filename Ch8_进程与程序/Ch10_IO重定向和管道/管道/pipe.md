@@ -1,0 +1,247 @@
+使用管道可以来连接一个进程的输出和另一个进程的输入
+
+管道的工作原理：管道是内核中的一个单项的数据通道。管道有一个读取端和写入端。
+
+管道有缺陷：效率不高，是一个队列，如果出现多个进程读取数据必然会出现数据读取不完整(Unix/Linux编程实践教程P321)
+
+[![rtSwwj.md.png](https://s3.ax1x.com/2020/12/18/rtSwwj.md.png)](https://imgchr.com/i/rtSwwj)
+
+**1. 创建管道**
+
+`#include <unistd.h>`
+
+`result = pipe(int array[2]);`
+
+`array[0]:读取端文件描述符  array[1]:写入端文件描述符`
+
+`return 0->success   -1 -> error`
+
+[![rtSqXD.png](https://s3.ax1x.com/2020/12/18/rtSqXD.png)](https://imgchr.com/i/rtSqXD)
+
+**2. 使用管道**
+
+* **Weird Demo -- 同一进程间的管道**
+
+  ```c
+  /**
+   * * Demostrates: how to create and use a pipe
+   * * Effect: create a pipe, <process perspective> write into writing end, then runs around and reading from
+   *   reading end. A litte weird, but demostrates the idea.
+   *  
+   *   result = pipe(int array[2]);
+   *   array[0]:读取端文件描述符  array[1]:写入端文件描述符
+  */
+  
+  #include <stdio.h>
+  #include <unistd.h>
+  #include <stdlib.h>
+  #include <string.h>
+  
+  int main()
+  {
+      int aPipe[2];
+      char buf[BUFSIZ];
+  
+      int result;
+  
+      // create a pipe
+      if(result = pipe(aPipe)){
+          perror("Create pipe fail.\n");
+          exit(1);
+      }
+  
+      printf("Create pipe sucessfully! It's file descriptor: {%d, %d}\n", aPipe[0], aPipe[1]);
+  
+      // illustrate
+      // read from stdin, write into pipe, read from pipe, and print on screen(stdout)
+      // https://s3.ax1x.com/2020/12/19/rNXBHs.png this pic shows how data transports
+      while(fgets(buf, BUFSIZ, stdin)){
+          int len = strlen(buf);
+          // write buf into pipe
+          if( write(aPipe[1], buf, len) != len){
+              perror("write into pipe");
+              break;
+          }
+  
+          // read data from pipe
+          len = read(aPipe[0], buf, len);
+          if(len == -1){
+              perror("reading from pipe");
+              break;
+          }
+  
+          // print on screen (write data into stdout)
+          if(write(STDOUT_FILENO, buf, len) != len){
+              perror("writing to stdout");
+              break;
+          }
+      }
+  
+  }
+  ```
+
+* **使用pipe & fork在两个进程间共享管道**
+
+  [![rNxwuD.md.png](https://s3.ax1x.com/2020/12/19/rNxwuD.md.png)](https://imgchr.com/i/rNxwuD)
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int aPipe[2];
+    char buf[BUFSIZ];
+
+    if(pipe(aPipe) == -1){
+        perror("Pipe creation failed.");
+        exit(0);
+    }
+
+    // parent process read data from stdin, then write data into aPipe[1], after that, child process read data from aPipe[0] and print data on screen
+    while(fgets(buf, BUFSIZ, stdin)){
+        int len = strlen(buf);
+        if(write(aPipe[1], buf, len) != len){
+            perror("write into pipe");
+            break;
+        }
+        printf("Write data into pipe by parent process (pid: %d) sucessfully.\n", getpid());
+
+        pid_t pid = fork();
+
+        switch (pid)
+        {
+        case 0:
+            if((len = read(aPipe[0], buf, BUFSIZ)) == -1){
+                perror("read from pipe");
+                break;
+            }
+
+            printf("Read data from pipe by child process (pid: %d) successfully.\n", getpid());
+            
+            if(write(STDOUT_FILENO, buf, len) != len){
+                perror("writing to stdout");
+                break;
+            }
+            printf("Write data into stdout by child process (pid: %d) successfully.\n\n", getpid());
+            
+            break;
+        
+        case -1:
+            perror("fork");
+            exit(1);
+
+        default:
+            wait(NULL);
+            break;
+        }
+    }
+}
+```
+
+* **使用pipe、fork、exec**
+
+>\#include<unistd.h>
+>
+>int dup（int fd）；
+>
+>int dup2（int fd1，int fd2）;    // 让fd2指向fd1指向的文件
+>
+>两个均为复制一个现存的文件的描述
+>
+>两个函数的返回：若成功为新的文件描述，若出错为-1；
+>
+>
+>
+>当调用dup函数时，内核在进程中创建一个新的文件描述符，此描述符是当前可用文件描述符的最小数值，这个文件描述符指向fd所拥有的文件表项
+>
+>
+>
+>dup2则可以用fd2参数指定新的描述符数值。fd1 = oldfd, fd2 = newfd
+>
+>1. 如果fd2已经打开，则先关闭。
+>
+>   若fd1=fd2，则dup2返回fd2，而不关闭它。
+>
+>2. dup2函数返回的新文件描述符f2同样与参数fd1共享同一文件表项。(f1, f2都指向同一文件项)                       
+>
+>   
+>
+>   通常使用这两个系统调用来重定向一个打开的文件描述符。
+>
+>   close(0);
+>
+>   newfd = dup(fd);
+>
+>   // 上面两句合二为一
+>
+>   newfd = dup2(fd, 0);	// 先尝试关闭0，再将fd所指文件关联到0上
+
+[![rUA0zj.png](https://s3.ax1x.com/2020/12/19/rUA0zj.png)](https://imgchr.com/i/rUA0zj)](https://imgchr.com/i/rUAMJe)
+
+[![rUAMJe.jpg](https://s3.ax1x.com/2020/12/19/rUAMJe.jpg)](https://imgchr.com/i/rUAMJe)
+
+```c
+/**
+ * 两程序间共享管道
+ * pipe fork exec
+ * 实现类似这样的用法
+ * who | sort
+ * ==> pipedemo3 who sort
+*/
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+
+int main(int argc, char** argv)
+{
+    if(argc != 3){
+        fprintf(stderr, "Usage: pipedemo3 cmd1 cmd2\n");
+        exit(1);
+    }
+
+    int aPipe[2];
+    
+    if(pipe(aPipe) == -1){
+        perror("pipe");
+        exit(1);
+    }
+
+    pid_t pid = fork();
+
+    switch (pid)
+    {
+    case 0:
+        // 断掉子进程指向管道输出的文件描述符
+        if(close(aPipe[0]) == -1){     // 子进程先执行替换成who，who输出信息，因此只需要将who的输出通到管道的输入就好了
+            perror("close");
+            exit(1);
+        }
+
+        // 重定向(STDOUT_FILENO指向从stdout到管道入口)
+        dup2(aPipe[1], STDOUT_FILENO);
+        
+        // 父进程的aPipe两个文件描述符完成使命，使STDOUT_FILENO重定向完成
+        if(close(aPipe[1]) == -1){
+            perror("close");
+            exit(1);
+        }
+
+        execlp(argv[1], argv[1], NULL);
+
+    default:
+        wait(NULL);
+        close(aPipe[1]);
+        dup2(aPipe[0], STDIN_FILENO);
+        close(aPipe[0]);
+        execlp(argv[2], argv[2], NULL);
+    }
+}
+```
+
