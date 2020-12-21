@@ -419,6 +419,16 @@ ISTORE
 
 **What is race condition?**
 
+Briefly Def: 
+
+* a timing dependent error involving shared state 
+
+  ​	It depends on how threads are scheduled.
+
+(Hard to detect)
+
+
+
 **Defined by Wikipedia**
 
 A race condition arises in software when a computer program, to operate properly, depends on the sequence or timing of the program's [processes](https://en.wikipedia.org/wiki/Process_(computing)) or [threads](https://en.wikipedia.org/wiki/Thread_(computing)). Critical(临界的) race conditions cause invalid execution and [software bugs](https://en.wikipedia.org/wiki/Software_bug). Critical race conditions often happen **when the processes or threads depend on some shared state.** Operations upon shared states are done(解决) in [critical sections](https://en.wikipedia.org/wiki/Critical_section)(临界区段*) that must be [mutually exclusive](https://en.wikipedia.org/wiki/Mutual_exclusion).（加锁） Failure to obey this rule can corrupt(破坏) the shared state.
@@ -492,6 +502,14 @@ int main()
 }
 ```
 
+相当于：
+
+[![rBpHXR.png](https://s3.ax1x.com/2020/12/21/rBpHXR.png)](https://imgchr.com/i/rBpHXR)
+
+
+
+[![rB9Qun.png](https://s3.ax1x.com/2020/12/21/rB9Qun.png)](https://imgchr.com/i/rB9Qun)
+
 #### 问题所在：很慢
 
 ```c
@@ -523,11 +541,27 @@ sys     0m0.000s
 
 是快了很多，但是有必要吗？为什么不直接让一条线程执行两次myfunc，还省去四次加锁解锁的时间
 
-* 解决方案：让两条线程把需要加和的数据存储在两个变量里，最终再对这两个变量进行最终加和，即`example5.c`
+* **解决方案**：
 
+  1. 让两条线程把需要加和的数据存储在两个变量里，最终再对这两个变量进行最终加和，即`example5.c`
 
+  2. 加锁的两种人为实现都太complicated了，有没有更好的解决方案？
 
+     **Semaphores -- 信号量**
 
+     [![rBPSOA.png](https://s3.ax1x.com/2020/12/21/rBPSOA.png)](https://imgchr.com/i/rBPSOA)
+
+     这些TestAndASet、Swap、Semaphors实现都是**Spinlock -- 自旋锁**，他们都需要一个busy waiting(忙时等待)
+
+     自旋锁：
+
+     [![rBFlzF.png](https://s3.ax1x.com/2020/12/21/rBFlzF.png)](https://imgchr.com/i/rBFlzF)
+
+     解释一下为什么cpu会被wait浪费，当一个线程进入了临界区内，另一条线程如果尝试进入临界区会先执行wait，由于不符合出wait条件会使用cpu不断地在wait的while循环里待着，这也是消耗cpu的行为，不如先让他阻塞掉，当在临界区执行完毕的线程执行结束后会发signal唤醒刚刚等待的线程(这个存在senaphore结构体的list成员中)
+
+     下图的伪代码`add this process to..`和`remove a process P ...`个人认为应是thread而不是process
+
+[![rBFIyQ.png](https://s3.ax1x.com/2020/12/21/rBFIyQ.png)](https://imgchr.com/i/rBFIyQ)
 
 ## 单条线程的私有数据 -- TSD (Thread-specific Data)
 
