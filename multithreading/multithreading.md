@@ -1,3 +1,5 @@
+# [LinuxC] Quick Start of Multitreading多线程快速入门
+
 ref: https://www.bilibili.com/video/BV1kt411z7ND
 
 ## pthread_create
@@ -580,4 +582,10 @@ sys     0m0.000s
 `pthread_key_delete`
 
 
+
+
+
+## Exd：原子操作
+
+"原子操作(atomic operation)是不需要synchronized(同步)"，这是多线程编程的老生常谈了。所谓原子操作是指不会被[线程调度](https://baike.baidu.com/item/线程调度/10226112)机制打断的操作；这种操作一旦开始，就一直运行到结束，中间不会有任何 context switch （切换到另一个线程）
 
