@@ -561,9 +561,15 @@ sys     0m0.000s
 
      解释一下为什么cpu会被wait浪费，当一个线程进入了临界区内，另一条线程如果尝试进入临界区会先执行wait，由于不符合出wait条件会使用cpu不断地在wait的while循环里待着，这也是消耗cpu的行为，不如先让他阻塞掉，当在临界区执行完毕的线程执行结束后会发signal唤醒刚刚等待的线程(这个存在senaphore结构体的list成员中)
 
-     下图的伪代码`add this process to..`和`remove a process P ...`个人认为应是thread而不是process
+     * 使用多进程
+
+     下图的伪代码`add this process to..`和`remove a process P ...`注意是process
 
 [![rBFIyQ.png](https://s3.ax1x.com/2020/12/21/rBFIyQ.png)](https://imgchr.com/i/rBFIyQ)
+
+### 生产者消费者 -- 分布在两个进程中
+
+[![rB3gTf.png](https://s3.ax1x.com/2020/12/21/rB3gTf.png)](https://imgchr.com/i/rB3gTf)
 
 ## 单条线程的私有数据 -- TSD (Thread-specific Data)
 

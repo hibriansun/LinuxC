@@ -266,4 +266,164 @@ int main(int argc, char** argv)
 - 因为从管道读取数据的进程会关闭其持有的管道写入描述符，所以当其他进程完成输出并关闭管道写入描述符后，读端进程就能看到文件结束，若是读取端进程没有关闭写入端，则在其他写入端进程关闭写入端后，**读取端也不会看到文件结束，即使其已经读取完管道中的数据**。此外读取端的read()函数会一直**阻塞**以等待数据到来，这是**因为内核还知道至少存在一个管道的写入描述符还打开着**，即读取进程自己打开的写入文件描述符，理论上讲这个进程仍然可以向管道写入数据，即使其已经被读取操作阻塞了。因为在真实的环境下，read()有可能会被一个向管道写入数据的信号处理器中断。
 - 而写入进程关闭其读取文件描述符的原因则与读取进程不同。当一个进程试图向一个没有打开着的读取文件描述符发管道写入数据时，内核会向写入进程发送一个SIGPIPE信号。默认情况下，这个信号会杀死一个进程。但是进程可以捕获或忽略这信号，这样会导致管道的write（）操作因EPIPE错误而失败。（已损坏的管道）。此外如果写入进程没有关闭读取端，那么即使在其他进程已经关闭了管道的读取端之后，写入端进程仍然能够向管道写入数据，最后数据将充满整个管道，**后续的写入请求会被永远阻塞**。
 
-##  
+
+
+### 有名管道
+
+与匿名管道特性基本一致，除了有名管道可以在没有亲缘关系的进程间通信
+
+创建有名管道
+
+```c
+#include <sys/types.h>
+#include <sys/stat.h>
+
+int mkfifo(const char *pathname, mode_t mode);
+
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int mknod(const char *pathname, mode_t mode, dev_t dev);
+
+
+// mode: 文件类型|0XXX(权限类型)
+```
+
+#### 全双工有名管道应用
+
+由于管道的单项流动性，我们需要建立两个管道来实现双向数据流通
+
+```c
+// server.c
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+// server 向writefifo写 client从writefifo读
+// server 从readfifo读 client向readfifo写
+#define READFIFO "readfifo"
+#define WRITEFIFO "writefifo"
+
+int main()
+{
+    umask(0);
+    // 写入管道
+    if(mkfifo(WRITEFIFO, S_IFIFO|0666)){
+        perror("mkfifo");
+        exit(1);
+    }
+
+    int wfd;
+    umask(0);
+    // 只读方式打开写入管道
+    if((wfd = open(WRITEFIFO, O_WRONLY)) == -1){
+        perror("open");
+        exit(1);
+    }
+
+    int rfd;
+    // 打开读入管道 -- 阻塞等待读入管道可被打开
+    while((rfd = open(READFIFO, O_RDONLY)) == -1){
+        printf("Waiting\n");
+        sleep(1);
+    }
+
+    char buf[BUFSIZ];
+
+    while(1){
+        printf("Msg send to client:");
+        // 向client写入>>"向writefifo写"
+        fgets(buf, BUFSIZ, stdin);      // fgets会读入换行再加'\0'
+        buf[strlen(buf)-1] = '\0';
+        if(strcmp(buf, "quit") == 0){
+            close(wfd);
+            unlink(WRITEFIFO);      // 删除一个文件
+            close(rfd);
+            exit(0);
+        }
+        write(wfd, buf, strlen(buf));
+
+        // 从client的"readfifo"读入
+        read(rfd, buf, BUFSIZ);
+        if(strlen(buf) != 0){
+            printf("Msg from Client:%s\n", buf);
+        }
+    }
+}
+```
+
+```c
+// client.c
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+// server 向writefifo写 client从writefifo读
+// server 从readfifo读 client向readfifo写
+#define READFIFO "writefifo"
+#define WRITEFIFO "readfifo"
+
+int main()
+{
+    umask(0);
+    // 建立管道client向中写入，server从中读取
+    if(mkfifo(WRITEFIFO, S_IFIFO|0666)){
+        perror("mkfifo");
+        exit(1);
+    }
+
+
+    umask(0);
+    int rfd;
+    // client从writefifo中读取
+    while((rfd = open(READFIFO, O_RDONLY)) == -1){
+        printf("Waiting\n");
+        sleep(1);
+    }
+
+    int wfd;
+    // 只读方式打开要写的文件
+    umask(0);
+    if((wfd = open(WRITEFIFO, O_WRONLY)) == -1){
+        perror("open");
+        exit(1);
+    }
+
+
+    char buf[BUFSIZ];
+    while(1){
+        // 从管道中读取信息
+        int len = read(rfd, buf, BUFSIZ);
+        if(len != 0){
+
+            printf("Msg from server:%s\n", buf);
+        }
+        
+        // send msg to WRITEFIFO
+        printf("Msg send to server:");
+        fgets(buf, BUFSIZ, stdin);
+        buf[strlen(buf)-1] = '\0';
+        if(strcmp(buf, "quit") == 0){
+            close(wfd);
+            unlink(WRITEFIFO);      // 删除一个文件
+            close(rfd);
+            exit(0);
+        }
+        write(wfd, buf, strlen(buf));
+    }
+}
+```
+
